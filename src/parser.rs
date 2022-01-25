@@ -1,5 +1,6 @@
 use super::tokenizer::Token;
 
+#[derive(Debug)]
 pub enum ParseError {
     IsNotString,
     IsNotNumber,
@@ -8,6 +9,7 @@ pub enum ParseError {
     InvalidToken,
     UnexpectedToken,
 }
+
 pub trait Node {
     fn print_node(&self) -> String;
 }
@@ -104,7 +106,7 @@ pub fn parse_object(
         Err(err) => return Err(err),
     }
 
-    if !expect_token(Token::Colorn, token_list, index) {
+    if !expect_token(Token::RightBracket, token_list, index) {
         return Err(ParseError::UnexpectedToken);
     }
 
@@ -123,6 +125,7 @@ pub fn parse_value(
         Token::Num(_) => parse_number(token_list, index),
         Token::Bool(_) => parse_bool(token_list, index),
         Token::Null => parse_null(token_list, index),
+        Token::LeftBracket => parse_object(token_list, index),
         _ => Err(ParseError::InvalidToken),
     }
 }
@@ -174,5 +177,82 @@ pub fn parse_null(token_list: &Vec<Token>, index: &mut usize) -> Result<Box<dyn 
         }))
     } else {
         Err(ParseError::IsNotNull)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_parse() {
+        assert_eq!(
+            parse(vec![
+                Token::LeftBracket,
+                Token::Str("\"key\"".to_string()),
+                Token::Colorn,
+                Token::Str("\"value\"".to_string()),
+                Token::RightBracket,
+            ])
+            .unwrap()
+            .print_node(),
+            "{\"key\":\"value\"}".to_string()
+        );
+
+        assert_eq!(
+            parse(vec![
+                Token::LeftBracket,
+                Token::Str("\"key\"".to_string()),
+                Token::Colorn,
+                Token::Str("1".to_string()),
+                Token::RightBracket,
+            ])
+            .unwrap()
+            .print_node(),
+            "{\"key\":1}".to_string()
+        );
+
+        assert_eq!(
+            parse(vec![
+                Token::LeftBracket,
+                Token::Str("\"key\"".to_string()),
+                Token::Colorn,
+                Token::Str("true".to_string()),
+                Token::RightBracket,
+            ])
+            .unwrap()
+            .print_node(),
+            "{\"key\":true}".to_string()
+        );
+
+        assert_eq!(
+            parse(vec![
+                Token::LeftBracket,
+                Token::Str("\"key\"".to_string()),
+                Token::Colorn,
+                Token::Str("null".to_string()),
+                Token::RightBracket,
+            ])
+            .unwrap()
+            .print_node(),
+            "{\"key\":null}".to_string()
+        );
+
+        assert_eq!(
+            parse(vec![
+                Token::LeftBracket,
+                Token::Str("\"key\"".to_string()),
+                Token::Colorn,
+                Token::LeftBracket,
+                Token::Str("\"key\"".to_string()),
+                Token::Colorn,
+                Token::Str("\"value\"".to_string()),
+                Token::RightBracket,
+                Token::RightBracket,
+            ])
+            .unwrap()
+            .print_node(),
+            "{\"key\":{\"key\":\"value\"}}".to_string()
+        );
     }
 }
