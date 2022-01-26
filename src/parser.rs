@@ -14,6 +14,25 @@ pub trait Node {
     fn print_node(&self) -> String;
 }
 
+pub struct ObjectListNode {
+    value: Vec<Box<dyn Node>>,
+}
+
+impl Node for ObjectListNode {
+    fn print_node(&self) -> String {
+        let mut buf = String::new();
+        let mut count = 0;
+        if count < self.value.len() {
+            buf = self.value[count].print_node();
+            count += 1;
+        }
+        while count < self.value.len() {
+            buf = format!("{},\n{}", buf, self.value[count].print_node())
+        }
+        return format!("{{{}}}", buf);
+    }
+}
+
 pub struct ObjectNode {
     key: Box<dyn Node>,
     value: Box<dyn Node>,
@@ -21,7 +40,7 @@ pub struct ObjectNode {
 
 impl Node for ObjectNode {
     fn print_node(&self) -> String {
-        return format!("{{{}:{}}}", self.key.print_node(), self.value.print_node());
+        return format!("{}:{}", self.key.print_node(), self.value.print_node());
     }
 }
 
@@ -95,7 +114,32 @@ fn expect_token(token_type: Token, token_list: &Vec<Token>, index: &mut usize) -
 
 pub fn parse(token_list: Vec<Token>) -> Result<Box<dyn Node>, ParseError> {
     let mut index = 0;
-    return parse_object(&token_list, &mut index);
+    return parse_objects(&token_list, &mut index);
+}
+
+pub fn parse_objects(
+    token_list: &Vec<Token>,
+    index: &mut usize,
+) -> Result<Box<dyn Node>, ParseError> {
+    let mut value: Vec<Box<dyn Node>> = Vec::new();
+    if !expect_token(Token::LeftBracket, token_list, index) {
+        return Err(ParseError::UnexpectedToken);
+    }
+    loop {
+        match parse_object(token_list, index) {
+            Ok(v) => value.push(v),
+            Err(err) => return Err(err),
+        }
+
+        if !expect_token(Token::Commma, token_list, index) {
+            break;
+        }
+    }
+    if !expect_token(Token::RightBracket, token_list, index) {
+        return Err(ParseError::UnexpectedToken);
+    }
+
+    return Ok(Box::new(ObjectListNode { value: value }));
 }
 
 pub fn parse_object(
@@ -104,9 +148,6 @@ pub fn parse_object(
 ) -> Result<Box<dyn Node>, ParseError> {
     let key_resutl;
     let value_result;
-    if !expect_token(Token::LeftBracket, token_list, index) {
-        return Err(ParseError::UnexpectedToken);
-    }
 
     match parse_string(token_list, index) {
         Ok(key) => {
@@ -123,10 +164,6 @@ pub fn parse_object(
             value_result = value;
         }
         Err(err) => return Err(err),
-    }
-
-    if !expect_token(Token::RightBracket, token_list, index) {
-        return Err(ParseError::UnexpectedToken);
     }
 
     return Ok(Box::new(ObjectNode {
@@ -174,7 +211,7 @@ pub fn parse_value(
         Token::Num(_) => parse_number(token_list, index),
         Token::Bool(_) => parse_bool(token_list, index),
         Token::Null => parse_null(token_list, index),
-        Token::LeftBracket => parse_object(token_list, index),
+        Token::LeftBracket => parse_objects(token_list, index),
         Token::LeftSquareBracket => parse_array(token_list, index),
         _ => Err(ParseError::InvalidToken),
     }
