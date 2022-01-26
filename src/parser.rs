@@ -25,6 +25,25 @@ impl Node for ObjectNode {
     }
 }
 
+pub struct ArrayNode {
+    value: Vec<Box<dyn Node>>,
+}
+
+impl Node for ArrayNode {
+    fn print_node(&self) -> String {
+        let mut buf = String::new();
+        let mut count = 0;
+        if count < self.value.len() {
+            buf = self.value[count].print_node();
+            count += 1;
+        }
+        while count < self.value.len() {
+            buf = format!("{},{}", buf, self.value[count].print_node())
+        }
+        return format!("[{}]", buf);
+    }
+}
+
 pub struct StringNode {
     value: String,
 }
@@ -116,6 +135,36 @@ pub fn parse_object(
     }));
 }
 
+pub fn parse_array(
+    token_list: &Vec<Token>,
+    index: &mut usize,
+) -> Result<Box<dyn Node>, ParseError> {
+    let mut value: Vec<Box<dyn Node>> = Vec::new();
+
+    if !expect_token(Token::LeftSquareBracket, token_list, index) {
+        return Err(ParseError::UnexpectedToken);
+    }
+
+    loop {
+        match parse_value(token_list, index) {
+            Ok(v) => {
+                value.push(v);
+            }
+            Err(err) => return Err(err),
+        }
+
+        if !expect_token(Token::Commma, token_list, index) {
+            break;
+        }
+    }
+
+    if !expect_token(Token::RightSquareBracket, token_list, index) {
+        return Err(ParseError::UnexpectedToken);
+    }
+
+    return Ok(Box::new(ArrayNode { value: value }));
+}
+
 pub fn parse_value(
     token_list: &Vec<Token>,
     index: &mut usize,
@@ -126,6 +175,7 @@ pub fn parse_value(
         Token::Bool(_) => parse_bool(token_list, index),
         Token::Null => parse_null(token_list, index),
         Token::LeftBracket => parse_object(token_list, index),
+        Token::LeftSquareBracket => parse_array(token_list, index),
         _ => Err(ParseError::InvalidToken),
     }
 }
@@ -253,6 +303,23 @@ mod test {
             .unwrap()
             .print_node(),
             "{\"key\":{\"key\":\"value\"}}".to_string()
+        );
+
+        assert_eq!(
+            parse(vec![
+                Token::LeftBracket,
+                Token::Str("\"key\"".to_string()),
+                Token::Colorn,
+                Token::LeftSquareBracket,
+                Token::Str("\"a\"".to_string()),
+                Token::Commma,
+                Token::Str("\"b\"".to_string()),
+                Token::RightSquareBracket,
+                Token::RightBracket,
+            ])
+            .unwrap()
+            .print_node(),
+            "{\"key\":[\"a\",\"b\"}}".to_string()
         );
     }
 }
