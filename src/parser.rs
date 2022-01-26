@@ -12,6 +12,7 @@ pub enum ParseError {
 
 pub trait Node {
     fn print_node(&self) -> String;
+    fn format_node(&self, indent: &String) -> String;
 }
 
 pub struct ObjectListNode {
@@ -32,6 +33,25 @@ impl Node for ObjectListNode {
         }
         return format!("{{{}}}", buf);
     }
+
+    fn format_node(&self, indent: &String) -> String {
+        let mut buf = String::new();
+        let mut count = 0;
+        if count < self.value.len() {
+            buf = self.value[count].format_node(indent);
+            count += 1;
+        }
+        while count < self.value.len() {
+            buf = format!(
+                "{},\n{}{}",
+                buf,
+                self.value[count].format_node(indent),
+                indent
+            );
+            count += 1;
+        }
+        return format!("{{\n{}\n}}", buf);
+    }
 }
 
 pub struct ObjectNode {
@@ -42,6 +62,15 @@ pub struct ObjectNode {
 impl Node for ObjectNode {
     fn print_node(&self) -> String {
         return format!("{}:{}", self.key.print_node(), self.value.print_node());
+    }
+
+    fn format_node(&self, indent: &String) -> String {
+        return format!(
+            "{}{}: {}",
+            indent,
+            self.key.format_node(indent),
+            self.value.format_node(indent)
+        );
     }
 }
 
@@ -63,6 +92,25 @@ impl Node for ArrayNode {
         }
         return format!("[{}]", buf);
     }
+
+    fn format_node(&self, indent: &String) -> String {
+        let mut buf = String::new();
+        let mut count = 0;
+        if count < self.value.len() {
+            buf = format!("{}{}", indent, self.value[count].format_node(indent));
+            count += 1;
+        }
+        while count < self.value.len() {
+            buf = format!(
+                "{},\n{}{}",
+                buf,
+                indent,
+                self.value[count].format_node(indent)
+            );
+            count += 1;
+        }
+        return format!("[\n{}\n{}]", buf, indent);
+    }
 }
 
 pub struct StringNode {
@@ -71,6 +119,10 @@ pub struct StringNode {
 
 impl Node for StringNode {
     fn print_node(&self) -> String {
+        return format!("{}", self.value);
+    }
+
+    fn format_node(&self, _: &String) -> String {
         return format!("{}", self.value);
     }
 }
@@ -83,6 +135,10 @@ impl Node for NumberNode {
     fn print_node(&self) -> String {
         return format!("{}", self.value);
     }
+
+    fn format_node(&self, _: &String) -> String {
+        return format!("{}", self.value);
+    }
 }
 
 pub struct BoolNode {
@@ -93,6 +149,10 @@ impl Node for BoolNode {
     fn print_node(&self) -> String {
         return format!("{}", self.value);
     }
+
+    fn format_node(&self, _: &String) -> String {
+        return format!("{}", self.value);
+    }
 }
 
 pub struct NullNode {
@@ -101,6 +161,9 @@ pub struct NullNode {
 
 impl Node for NullNode {
     fn print_node(&self) -> String {
+        return format!("{}", self.value);
+    }
+    fn format_node(&self, _: &String) -> String {
         return format!("{}", self.value);
     }
 }
@@ -271,6 +334,8 @@ pub fn parse_null(token_list: &Vec<Token>, index: &mut usize) -> Result<Box<dyn 
 
 #[cfg(test)]
 mod test {
+    use std::vec;
+
     use super::*;
 
     #[test]
@@ -376,6 +441,28 @@ mod test {
             .unwrap()
             .print_node(),
             "{\"key\":\"value\",\"key\":\"value\"}".to_string()
+        );
+    }
+
+    #[test]
+    fn test_format_node() {
+        let indent = "  ".to_string();
+        assert_eq!(
+            ObjectListNode {
+                value: vec![Box::new(ObjectNode {
+                    key: Box::new(StringNode {
+                        value: "\"key\"".to_string(),
+                    }),
+                    value: Box::new(StringNode {
+                        value: "\"value\"".to_string(),
+                    }),
+                })],
+            }
+            .format_node(&indent),
+            r#"{
+                "key": "value"
+              }"#
+            .to_string()
         );
     }
 }
