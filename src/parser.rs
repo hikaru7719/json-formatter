@@ -27,7 +27,8 @@ impl Node for ObjectListNode {
             count += 1;
         }
         while count < self.value.len() {
-            buf = format!("{},\n{}", buf, self.value[count].print_node())
+            buf = format!("{},{}", buf, self.value[count].print_node());
+            count += 1;
         }
         return format!("{{{}}}", buf);
     }
@@ -57,7 +58,8 @@ impl Node for ArrayNode {
             count += 1;
         }
         while count < self.value.len() {
-            buf = format!("{},{}", buf, self.value[count].print_node())
+            buf = format!("{},{}", buf, self.value[count].print_node());
+            count += 1;
         }
         return format!("[{}]", buf);
     }
@@ -189,7 +191,7 @@ pub fn parse_array(
             }
             Err(err) => return Err(err),
         }
-
+        print!("kitayo");
         if !expect_token(Token::Commma, token_list, index) {
             break;
         }
@@ -356,7 +358,24 @@ mod test {
             ])
             .unwrap()
             .print_node(),
-            "{\"key\":[\"a\",\"b\"}}".to_string()
+            "{\"key\":[\"a\",\"b\"]}".to_string()
+        );
+
+        assert_eq!(
+            parse(vec![
+                Token::LeftBracket,
+                Token::Str("\"key\"".to_string()),
+                Token::Colorn,
+                Token::Str("\"value\"".to_string()),
+                Token::Commma,
+                Token::Str("\"key\"".to_string()),
+                Token::Colorn,
+                Token::Str("\"value\"".to_string()),
+                Token::RightBracket,
+            ])
+            .unwrap()
+            .print_node(),
+            "{\"key\":\"value\",\"key\":\"value\"}".to_string()
         );
     }
 }
