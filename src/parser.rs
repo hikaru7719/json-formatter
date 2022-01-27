@@ -447,6 +447,9 @@ mod test {
     #[test]
     fn test_format_node() {
         let indent = "  ".to_string();
+        let expect1 = r#"{
+  "key": "value"
+}"#;
         assert_eq!(
             ObjectListNode {
                 value: vec![Box::new(ObjectNode {
@@ -459,10 +462,36 @@ mod test {
                 })],
             }
             .format_node(&indent),
-            r#"{
-                "key": "value"
-              }"#
-            .to_string()
+            expect1.to_string()
+        );
+
+        let expect2 = r#"{
+  "key": [
+  "value1",
+  "value2"
+  ]
+}"#;
+
+        assert_eq!(
+            ObjectListNode {
+                value: vec![Box::new(ObjectNode {
+                    key: Box::new(StringNode {
+                        value: "\"key\"".to_string(),
+                    }),
+                    value: Box::new(ArrayNode {
+                        value: vec![
+                            Box::new(StringNode {
+                                value: "\"value1\"".to_string()
+                            }),
+                            Box::new(StringNode {
+                                value: "\"value2\"".to_string()
+                            })
+                        ],
+                    }),
+                })],
+            }
+            .format_node(&indent),
+            expect2.to_string()
         );
     }
 }
