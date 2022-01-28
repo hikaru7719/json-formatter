@@ -12,7 +12,7 @@ pub enum ParseError {
 
 pub trait Node {
     fn print_node(&self) -> String;
-    fn format_node(&self, indent: &String) -> String;
+    fn format_node(&self, indent: &String, depth: &mut usize) -> String;
 }
 
 pub struct ObjectListNode {
@@ -34,23 +34,18 @@ impl Node for ObjectListNode {
         return format!("{{{}}}", buf);
     }
 
-    fn format_node(&self, indent: &String) -> String {
+    fn format_node(&self, indent: &String, depth: &mut usize) -> String {
         let mut buf = String::new();
         let mut count = 0;
         if count < self.value.len() {
-            buf = self.value[count].format_node(indent);
+            buf = self.value[count].format_node(indent, depth);
             count += 1;
         }
         while count < self.value.len() {
-            buf = format!(
-                "{},\n{}{}",
-                buf,
-                self.value[count].format_node(indent),
-                indent
-            );
+            buf = format!("{},\n{}", buf, self.value[count].format_node(indent, depth),);
             count += 1;
         }
-        return format!("{{\n{}\n}}", buf);
+        return format!("{{\n{}\n{}}}", buf, indent.repeat(*depth));
     }
 }
 
@@ -64,13 +59,16 @@ impl Node for ObjectNode {
         return format!("{}:{}", self.key.print_node(), self.value.print_node());
     }
 
-    fn format_node(&self, indent: &String) -> String {
-        return format!(
+    fn format_node(&self, indent: &String, depth: &mut usize) -> String {
+        *depth += 1;
+        let result = format!(
             "{}{}: {}",
-            indent,
-            self.key.format_node(indent),
-            self.value.format_node(indent)
+            indent.repeat(*depth),
+            self.key.format_node(indent, depth),
+            self.value.format_node(indent, depth)
         );
+        *depth -= 1;
+        return result;
     }
 }
 
@@ -93,23 +91,30 @@ impl Node for ArrayNode {
         return format!("[{}]", buf);
     }
 
-    fn format_node(&self, indent: &String) -> String {
+    fn format_node(&self, indent: &String, depth: &mut usize) -> String {
+        *depth += 1;
         let mut buf = String::new();
         let mut count = 0;
         if count < self.value.len() {
-            buf = format!("{}{}", indent, self.value[count].format_node(indent));
+            buf = format!(
+                "{}{}",
+                indent.repeat(*depth),
+                self.value[count].format_node(indent, depth)
+            );
             count += 1;
         }
         while count < self.value.len() {
             buf = format!(
                 "{},\n{}{}",
                 buf,
-                indent,
-                self.value[count].format_node(indent)
+                indent.repeat(*depth),
+                self.value[count].format_node(indent, depth)
             );
             count += 1;
         }
-        return format!("[\n{}\n{}]", buf, indent);
+        *depth -= 1;
+
+        return format!("[\n{}\n{}]", buf, indent.repeat(*depth));
     }
 }
 
@@ -122,7 +127,7 @@ impl Node for StringNode {
         return format!("{}", self.value);
     }
 
-    fn format_node(&self, _: &String) -> String {
+    fn format_node(&self, _: &String, _: &mut usize) -> String {
         return format!("{}", self.value);
     }
 }
@@ -136,7 +141,7 @@ impl Node for NumberNode {
         return format!("{}", self.value);
     }
 
-    fn format_node(&self, _: &String) -> String {
+    fn format_node(&self, _: &String, _: &mut usize) -> String {
         return format!("{}", self.value);
     }
 }
@@ -150,7 +155,7 @@ impl Node for BoolNode {
         return format!("{}", self.value);
     }
 
-    fn format_node(&self, _: &String) -> String {
+    fn format_node(&self, _: &String, _: &mut usize) -> String {
         return format!("{}", self.value);
     }
 }
@@ -163,7 +168,7 @@ impl Node for NullNode {
     fn print_node(&self) -> String {
         return format!("{}", self.value);
     }
-    fn format_node(&self, _: &String) -> String {
+    fn format_node(&self, _: &String, _: &mut usize) -> String {
         return format!("{}", self.value);
     }
 }
@@ -254,7 +259,6 @@ pub fn parse_array(
             }
             Err(err) => return Err(err),
         }
-        print!("kitayo");
         if !expect_token(Token::Commma, token_list, index) {
             break;
         }
@@ -461,7 +465,7 @@ mod test {
                     }),
                 })],
             }
-            .format_node(&indent),
+            .format_node(&indent, &mut 0),
             expect1.to_string()
         );
 
@@ -490,7 +494,7 @@ mod test {
                     }),
                 })],
             }
-            .format_node(&indent),
+            .format_node(&indent, &mut 0),
             expect2.to_string()
         );
     }
