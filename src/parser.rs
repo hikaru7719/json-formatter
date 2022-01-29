@@ -471,8 +471,8 @@ mod test {
 
         let expect2 = r#"{
   "key": [
-  "value1",
-  "value2"
+    "value1",
+    "value2"
   ]
 }"#;
 
