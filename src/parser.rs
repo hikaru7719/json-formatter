@@ -23,12 +23,12 @@ impl Node for ObjectListNode {
     fn print_node(&self) -> String {
         let mut buf = String::new();
         let mut count = 0;
-        if count < self.value.len() {
-            buf = self.value[count].print_node();
-            count += 1;
-        }
         while count < self.value.len() {
-            buf = format!("{},{}", buf, self.value[count].print_node());
+            if count == 0 {
+                buf = self.value[count].print_node();
+            } else {
+                buf = format!("{},{}", buf, self.value[count].print_node());
+            }
             count += 1;
         }
         return format!("{{{}}}", buf);
@@ -37,12 +37,12 @@ impl Node for ObjectListNode {
     fn format_node(&self, indent: &String, depth: &mut usize) -> String {
         let mut buf = String::new();
         let mut count = 0;
-        if count < self.value.len() {
-            buf = self.value[count].format_node(indent, depth);
-            count += 1;
-        }
         while count < self.value.len() {
-            buf = format!("{},\n{}", buf, self.value[count].format_node(indent, depth),);
+            if count == 0 {
+                buf = self.value[count].format_node(indent, depth);
+            } else {
+                buf = format!("{},\n{}", buf, self.value[count].format_node(indent, depth),);
+            }
             count += 1;
         }
         return format!("{{\n{}\n{}}}", buf, indent.repeat(*depth));
@@ -80,36 +80,36 @@ impl Node for ArrayNode {
     fn print_node(&self) -> String {
         let mut buf = String::new();
         let mut count = 0;
-        if count < self.value.len() {
-            buf = self.value[count].print_node();
-            count += 1;
-        }
         while count < self.value.len() {
-            buf = format!("{},{}", buf, self.value[count].print_node());
+            if count == 0 {
+                buf = self.value[count].print_node();
+            } else {
+                buf = format!("{},{}", buf, self.value[count].print_node());
+            }
             count += 1;
         }
         return format!("[{}]", buf);
     }
 
     fn format_node(&self, indent: &String, depth: &mut usize) -> String {
-        *depth += 1;
         let mut buf = String::new();
         let mut count = 0;
-        if count < self.value.len() {
-            buf = format!(
-                "{}{}",
-                indent.repeat(*depth),
-                self.value[count].format_node(indent, depth)
-            );
-            count += 1;
-        }
+        *depth += 1;
         while count < self.value.len() {
-            buf = format!(
-                "{},\n{}{}",
-                buf,
-                indent.repeat(*depth),
-                self.value[count].format_node(indent, depth)
-            );
+            if count == 0 {
+                buf = format!(
+                    "{}{}",
+                    indent.repeat(*depth),
+                    self.value[count].format_node(indent, depth)
+                );
+            } else {
+                buf = format!(
+                    "{},\n{}{}",
+                    buf,
+                    indent.repeat(*depth),
+                    self.value[count].format_node(indent, depth)
+                );
+            }
             count += 1;
         }
         *depth -= 1;
@@ -183,8 +183,7 @@ fn expect_token(token_type: Token, token_list: &Vec<Token>, index: &mut usize) -
 }
 
 pub fn parse(token_list: Vec<Token>) -> Result<Box<dyn Node>, ParseError> {
-    let mut index = 0;
-    return parse_objects(&token_list, &mut index);
+    return parse_objects(&token_list, &mut 0);
 }
 
 pub fn parse_objects(
