@@ -12,7 +12,16 @@ pub enum Token {
     Null,
 }
 
-pub fn tokenize(str_vec: Vec<char>) -> Vec<Token> {
+#[derive(Debug)]
+pub enum TokenizeError {
+    InvalidString,
+    NotTrue,
+    NotFalse,
+    NotNull,
+    InvalidCharactar,
+}
+
+pub fn tokenize(str_vec: Vec<char>) -> Result<Vec<Token>, TokenizeError> {
     let mut vec: Vec<Token> = Vec::new();
     let mut count = 0;
     while count < str_vec.len() {
@@ -42,16 +51,16 @@ pub fn tokenize(str_vec: Vec<char>) -> Vec<Token> {
                 count += 1;
             }
             '"' => {
-                distinguish_string(&str_vec, &mut count, &mut vec);
+                distinguish_string(&str_vec, &mut count, &mut vec)?;
             }
             'f' => {
-                distinguish_false(&str_vec, &mut count, &mut vec);
+                distinguish_false(&str_vec, &mut count, &mut vec)?;
             }
             't' => {
-                distinguish_true(&str_vec, &mut count, &mut vec);
+                distinguish_true(&str_vec, &mut count, &mut vec)?;
             }
             'n' => {
-                distinguish_null(&str_vec, &mut count, &mut vec);
+                distinguish_null(&str_vec, &mut count, &mut vec)?;
             }
             '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
                 distinguish_number(&str_vec, &mut count, &mut vec);
@@ -59,15 +68,18 @@ pub fn tokenize(str_vec: Vec<char>) -> Vec<Token> {
             '\n' | '\r' | ' ' | '\t' => {
                 consume_whitespace(&str_vec, &mut count);
             }
-            _ => panic!("invalid charactar"),
+            _ => return Err(TokenizeError::InvalidCharactar),
         }
     }
-    vec
+    return Ok(vec);
 }
 
-fn distinguish_string(str_vec: &Vec<char>, count: &mut usize, vec: &mut Vec<Token>) {
-    let mut buf = String::new();
-    buf.push(str_vec[*count]);
+fn distinguish_string(
+    str_vec: &Vec<char>,
+    count: &mut usize,
+    vec: &mut Vec<Token>,
+) -> Result<(), TokenizeError> {
+    let mut buf = str_vec[*count].to_string();
     *count += 1;
 
     while *count < str_vec.len() {
@@ -75,47 +87,59 @@ fn distinguish_string(str_vec: &Vec<char>, count: &mut usize, vec: &mut Vec<Toke
             buf.push(str_vec[*count]);
             vec.push(Token::Str(buf.clone()));
             *count += 1;
-            return;
+            return Ok(());
         }
         buf.push(str_vec[*count]);
         *count += 1;
     }
-    panic!("can't find \"");
+    return Err(TokenizeError::InvalidString);
 }
 
-fn distinguish_false(str_vec: &Vec<char>, count: &mut usize, vec: &mut Vec<Token>) {
+fn distinguish_false(
+    str_vec: &Vec<char>,
+    count: &mut usize,
+    vec: &mut Vec<Token>,
+) -> Result<(), TokenizeError> {
     if let Some(bool) = str_vec.get(*count..*count + 5) {
         let buf = bool.iter().collect::<String>();
         if buf == "false".to_string() {
             vec.push(Token::Bool(buf.clone()));
             *count += 5;
-            return;
+            return Ok(());
         }
     }
-    panic!("not false");
+    return Err(TokenizeError::NotFalse);
 }
 
-fn distinguish_true(str_vec: &Vec<char>, count: &mut usize, vec: &mut Vec<Token>) {
+fn distinguish_true(
+    str_vec: &Vec<char>,
+    count: &mut usize,
+    vec: &mut Vec<Token>,
+) -> Result<(), TokenizeError> {
     if let Some(bool) = str_vec.get(*count..*count + 4) {
         let buf = bool.iter().collect::<String>();
         if buf == "true".to_string() {
             vec.push(Token::Bool(buf.clone()));
             *count += 4;
-            return;
+            return Ok(());
         }
     }
-    panic!("not true");
+    return Err(TokenizeError::NotTrue);
 }
 
-fn distinguish_null(str_vec: &Vec<char>, count: &mut usize, vec: &mut Vec<Token>) {
+fn distinguish_null(
+    str_vec: &Vec<char>,
+    count: &mut usize,
+    vec: &mut Vec<Token>,
+) -> Result<(), TokenizeError> {
     if let Some(null) = str_vec.get(*count..*count + 4) {
         if null.iter().collect::<String>() == "null".to_string() {
             vec.push(Token::Null);
             *count += 4;
-            return;
+            return Ok(());
         }
     }
-    panic!("not null");
+    return Err(TokenizeError::NotNull);
 }
 
 fn distinguish_number(str_vec: &Vec<char>, count: &mut usize, vec: &mut Vec<Token>) {
@@ -151,47 +175,47 @@ mod test {
     #[test]
     fn test_tokenize() {
         assert_eq!(
-            tokenize("{".chars().collect::<Vec<char>>()),
+            tokenize("{".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::LeftBracket]
         );
         assert_eq!(
-            tokenize("}".chars().collect::<Vec<char>>()),
+            tokenize("}".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::RightBracket]
         );
         assert_eq!(
-            tokenize("[".chars().collect::<Vec<char>>()),
+            tokenize("[".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::LeftSquareBracket]
         );
         assert_eq!(
-            tokenize("]".chars().collect::<Vec<char>>()),
+            tokenize("]".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::RightSquareBracket]
         );
         assert_eq!(
-            tokenize(",".chars().collect::<Vec<char>>()),
+            tokenize(",".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::Commma]
         );
         assert_eq!(
-            tokenize(":".chars().collect::<Vec<char>>()),
+            tokenize(":".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::Colorn]
         );
         assert_eq!(
-            tokenize("\"hoge\"".chars().collect::<Vec<char>>()),
+            tokenize("\"hoge\"".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::Str("\"hoge\"".to_string())]
         );
         assert_eq!(
-            tokenize("false".chars().collect::<Vec<char>>()),
+            tokenize("false".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::Bool("false".to_string())]
         );
         assert_eq!(
-            tokenize("true".chars().collect::<Vec<char>>()),
+            tokenize("true".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::Bool("true".to_string())]
         );
         assert_eq!(
-            tokenize("null".chars().collect::<Vec<char>>()),
+            tokenize("null".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::Null]
         );
         assert_eq!(
-            tokenize("100".chars().collect::<Vec<char>>()),
+            tokenize("100".chars().collect::<Vec<char>>()).unwrap(),
             vec![Token::Num("100".to_string())]
         );
 
@@ -200,7 +224,8 @@ mod test {
                 "{  \"key\"  \t :  \"value\" \r\n}"
                     .chars()
                     .collect::<Vec<char>>()
-            ),
+            )
+            .unwrap(),
             vec![
                 Token::LeftBracket,
                 Token::Str("\"key\"".to_string()),
@@ -216,7 +241,7 @@ mod test {
         let str_vec = "\"hoge\"".chars().collect::<Vec<char>>();
         let mut count = 0;
         let mut vec: Vec<Token> = Vec::new();
-        distinguish_string(&str_vec, &mut count, &mut vec);
+        distinguish_string(&str_vec, &mut count, &mut vec).unwrap();
         assert_eq!(vec, vec![Token::Str("\"hoge\"".to_string())]);
         assert_eq!(count, 6);
     }
@@ -226,7 +251,7 @@ mod test {
         let str_vec = "false".chars().collect::<Vec<char>>();
         let mut count = 0;
         let mut vec: Vec<Token> = Vec::new();
-        distinguish_false(&str_vec, &mut count, &mut vec);
+        distinguish_false(&str_vec, &mut count, &mut vec).unwrap();
         assert_eq!(vec, vec![Token::Bool("false".to_string())]);
         assert_eq!(count, 5);
     }
@@ -236,7 +261,7 @@ mod test {
         let str_vec = "true".chars().collect::<Vec<char>>();
         let mut count = 0;
         let mut vec: Vec<Token> = Vec::new();
-        distinguish_true(&str_vec, &mut count, &mut vec);
+        distinguish_true(&str_vec, &mut count, &mut vec).unwrap();
         assert_eq!(vec, vec![Token::Bool("true".to_string())]);
         assert_eq!(count, 4);
     }
@@ -246,7 +271,7 @@ mod test {
         let str_vec = "null".chars().collect::<Vec<char>>();
         let mut count = 0;
         let mut vec: Vec<Token> = Vec::new();
-        distinguish_null(&str_vec, &mut count, &mut vec);
+        distinguish_null(&str_vec, &mut count, &mut vec).unwrap();
         assert_eq!(vec, vec![Token::Null]);
         assert_eq!(count, 4);
     }

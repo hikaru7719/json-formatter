@@ -16,7 +16,7 @@ fn main() {
         }
     }
 
-    let vec_token = tokenizer::tokenize(buf.chars().collect());
+    let vec_token = tokenizer::tokenize(buf.chars().collect()).unwrap();
     let result = parser::parse(vec_token).unwrap();
     println!("{}", result.format_node(&("  ".to_string()), &mut 0));
 }
