@@ -87,7 +87,8 @@ impl NumberTokenizer {
                 | NState::Digit
                 | NState::Dot
                 | NState::Minus
-                | NState::Plus => {
+                | NState::Plus
+                | NState::Exponential => {
                     self.buf.push(ch);
                     *count += 1;
                     self.state = NState::Digit;
