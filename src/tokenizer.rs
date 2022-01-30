@@ -119,7 +119,7 @@ fn distinguish_escape_string(
                 let s2 = str_vec[*count + 1];
                 let s3 = str_vec[*count + 2];
                 let s4 = str_vec[*count + 3];
-                if s1.is_digit(4) && s2.is_digit(4) && s3.is_digit(4) && s4.is_digit(4) {
+                if s1.is_digit(16) && s2.is_digit(16) && s3.is_digit(16) && s4.is_digit(16) {
                     buf.push(s1);
                     buf.push(s2);
                     buf.push(s3);
