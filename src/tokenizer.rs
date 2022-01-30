@@ -1,3 +1,5 @@
+use super::number::NumberTokenizer;
+
 #[derive(Debug, PartialEq)]
 pub enum Token {
     LeftBracket,        // {
@@ -62,7 +64,7 @@ pub fn tokenize(str_vec: Vec<char>) -> Result<Vec<Token>, TokenizeError> {
             'n' => {
                 distinguish_null(&str_vec, &mut count, &mut vec)?;
             }
-            '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
+            '-' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
                 distinguish_number(&str_vec, &mut count, &mut vec);
             }
             '\n' | '\r' | ' ' | '\t' => {
@@ -143,18 +145,8 @@ fn distinguish_null(
 }
 
 fn distinguish_number(str_vec: &Vec<char>, count: &mut usize, vec: &mut Vec<Token>) {
-    let mut buf = String::new();
-    while *count < str_vec.len() {
-        if str_vec[*count].is_digit(10) {
-            buf.push(str_vec[*count]);
-            *count += 1;
-            continue;
-        }
-        vec.push(Token::Num(buf.clone()));
-        return;
-    }
-
-    vec.push(Token::Num(buf.clone()));
+    let mut num_tokenizer = NumberTokenizer::new();
+    vec.push(Token::Num(num_tokenizer.tokenize(str_vec, count)));
     return;
 }
 
