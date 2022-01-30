@@ -251,6 +251,11 @@ pub fn parse_array(
         return Err(ParseError::UnexpectedToken);
     }
 
+    // 空配列の場合はreturnする
+    if expect_token(Token::RightSquareBracket, token_list, index) {
+        return Ok(Box::new(ArrayNode { value: value }));
+    }
+
     loop {
         match parse_value(token_list, index) {
             Ok(v) => {
