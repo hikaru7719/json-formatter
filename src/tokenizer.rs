@@ -90,11 +90,49 @@ fn distinguish_string(
             vec.push(Token::Str(buf.clone()));
             *count += 1;
             return Ok(());
+        } else if str_vec[*count] == '\\' {
+            distinguish_escape_string(str_vec, count, &mut buf)?;
+        } else {
+            buf.push(str_vec[*count]);
+            *count += 1;
         }
-        buf.push(str_vec[*count]);
-        *count += 1;
     }
     return Err(TokenizeError::InvalidString);
+}
+
+fn distinguish_escape_string(
+    str_vec: &Vec<char>,
+    count: &mut usize,
+    buf: &mut String,
+) -> Result<(), TokenizeError> {
+    if str_vec[*count] == '\\' {
+        buf.push(str_vec[*count]);
+        *count += 1;
+        match str_vec[*count] {
+            '\\' | '\"' | '/' | 'b' | 'f' | 'n' | 'r' | 't' => {
+                buf.push(str_vec[*count]);
+                *count += 1;
+            }
+            'u' => {
+                *count += 1;
+                let s1 = str_vec[*count];
+                let s2 = str_vec[*count + 1];
+                let s3 = str_vec[*count + 2];
+                let s4 = str_vec[*count + 3];
+                if s1.is_digit(4) && s2.is_digit(4) && s3.is_digit(4) && s4.is_digit(4) {
+                    buf.push(s1);
+                    buf.push(s2);
+                    buf.push(s3);
+                    buf.push(s4);
+                    *count += 4;
+                } else {
+                    return Err(TokenizeError::InvalidString);
+                }
+            }
+            _ => return Err(TokenizeError::InvalidString),
+        }
+    }
+    return Ok(());
 }
 
 fn distinguish_false(

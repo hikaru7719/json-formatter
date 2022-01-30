@@ -183,7 +183,7 @@ fn expect_token(token_type: Token, token_list: &Vec<Token>, index: &mut usize) -
 }
 
 pub fn parse(token_list: Vec<Token>) -> Result<Box<dyn Node>, ParseError> {
-    return parse_objects(&token_list, &mut 0);
+    return parse_value(&token_list, &mut 0);
 }
 
 pub fn parse_objects(
