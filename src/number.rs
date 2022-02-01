@@ -146,3 +146,50 @@ impl NumberTokenizer {
         return false;
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_number_tokenizer_tokenize() {
+        assert_eq!(
+            NumberTokenizer::new().tokenize(&"0".chars().collect::<Vec<char>>(), &mut 0),
+            "0".to_string()
+        );
+
+        assert_eq!(
+            NumberTokenizer::new().tokenize(&"99999999".chars().collect::<Vec<char>>(), &mut 0),
+            "99999999".to_string()
+        );
+
+        assert_eq!(
+            NumberTokenizer::new().tokenize(&"-3".chars().collect::<Vec<char>>(), &mut 0),
+            "-3".to_string()
+        );
+
+        assert_eq!(
+            NumberTokenizer::new().tokenize(&"0.0001".chars().collect::<Vec<char>>(), &mut 0),
+            "0.0001".to_string()
+        );
+
+        assert_eq!(
+            NumberTokenizer::new().tokenize(&"-0.0001".chars().collect::<Vec<char>>(), &mut 0),
+            "-0.0001".to_string()
+        );
+
+        assert_eq!(
+            NumberTokenizer::new().tokenize(&"-1.3e+5".chars().collect::<Vec<char>>(), &mut 0),
+            "-1.3e+5".to_string()
+        );
+
+        assert_eq!(
+            NumberTokenizer::new().tokenize(&"-1.3e-5".chars().collect::<Vec<char>>(), &mut 0),
+            "-1.3e-5".to_string()
+        );
+
+        assert_eq!(
+            NumberTokenizer::new().tokenize(&"-1.3e5".chars().collect::<Vec<char>>(), &mut 0),
+            "-1.3e5".to_string()
+        );
+    }
+}
