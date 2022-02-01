@@ -1,4 +1,4 @@
-use json_parser::{parser, tokenizer};
+use json_formatter::{parser, tokenizer};
 
 fn main() {
     let mut buf = String::new();
