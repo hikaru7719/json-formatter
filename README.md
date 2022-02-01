@@ -1,6 +1,7 @@
 # json-formatter
 
-json-formatter is cli tool for formatting json.
+json-formatter is cli tool for formatting JSON.
+This tool supports JSON of RFC 8259 style. (maybe) 
 
 ![](./demo.gif)
 
@@ -8,7 +9,7 @@ json-formatter is cli tool for formatting json.
 
 ```bash
 git clone https://github.com/hikaru7719/json-formatter.git
-d json-formatter
+cd json-formatter
 cargo install --path .
 ```
 
